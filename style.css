@@ -1,0 +1,403 @@
+/* Global Reset & Typography */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Sarabun', sans-serif;
+    background-color: #fcfcfc;
+    color: #2b2b2b;
+    line-height: 1.6;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Color Variables */
+:root {
+    --primary: #D90429;
+    --primary-hover: #EF233C;
+    --dark: #1E1E24;
+    --light-gray: #F4F4F6;
+    --border: #E5E5E5;
+    --white: #FFFFFF;
+}
+
+/* Header */
+.app-header {
+    background-color: var(--white);
+    border-bottom: 3px solid var(--primary);
+    padding: 15px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+.header-container {
+    display: table;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.back-btn {
+    display: table-cell;
+    vertical-align: middle;
+    width: 90px;
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.app-header h1 {
+    display: table-cell;
+    text-align: right;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--dark);
+}
+
+.app-header h1 .accent {
+    color: var(--primary);
+}
+
+/* Container Layout */
+.app-container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 15px 80px 15px;
+}
+
+/* UI Elements */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-left: 5px solid var(--primary);
+    padding-left: 10px;
+}
+
+.section-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+/* Cards & Lists */
+.list-container {
+    display: block;
+}
+
+.item-card {
+    background-color: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+}
+
+.item-title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.item-meta {
+    font-size: 13px;
+    color: #777;
+}
+
+.chevron {
+    color: var(--primary);
+    font-weight: bold;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    font-size: 15px;
+}
+
+.btn-primary:hover { background-color: var(--primary-hover); }
+
+.btn-secondary {
+    background-color: var(--light-gray);
+    color: var(--dark);
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    display: block;
+}
+
+.btn-accent {
+    background-color: var(--dark);
+    color: var(--white);
+    border: none;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    font-size: 15px;
+}
+
+.btn-sm {
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-clear {
+    background: none;
+    border: none;
+    color: #888;
+    text-decoration: underline;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+/* Forms & Inputs */
+input[type="text"], select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+}
+
+input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.input-file {
+    display: none;
+}
+
+.defect-form-box {
+    margin-top: 25px;
+    padding: 15px;
+    background-color: var(--light-gray);
+    border-radius: 8px;
+}
+
+.defect-form-box h4 {
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+/* Photo Upload Elements */
+.photo-preview img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 6px;
+    margin: 10px 0;
+    border: 1px solid var(--border);
+}
+
+/* Defect Table/List within Report */
+.defect-row {
+    border-bottom: 1px solid var(--border);
+    padding: 15px 0;
+    display: table;
+    width: 100%;
+}
+
+.defect-img-col {
+    display: table-cell;
+    width: 40%;
+    vertical-align: top;
+    padding-right: 15px;
+}
+
+.defect-img-col img {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+
+.defect-text-col {
+    display: table-cell;
+    width: 60%;
+    vertical-align: top;
+}
+
+.defect-num {
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 5px;
+}
+
+/* Signatures */
+.card {
+    background-color: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.card h3 {
+    font-size: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 5px;
+    color: var(--dark);
+}
+
+.signature-grid {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.sig-wrapper {
+    flex: 1;
+    min-width: 250px;
+}
+
+.sig-label {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.canvas-holder {
+    background-color: var(--light-gray);
+    border: 1px dashed #b5b5b5;
+    border-radius: 6px;
+    position: relative;
+    height: 150px;
+}
+
+canvas {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+}
+
+.sig-image-placeholder img {
+    max-width: 100%;
+    max-height: 120px;
+    display: block;
+    margin: 10px auto;
+}
+
+/* Action Floating Bar */
+.action-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--white);
+    box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
+    padding: 12px 20px;
+    display: flex;
+    gap: 15px;
+    z-index: 99;
+}
+
+/* Modals */
+.modal {
+    display: none;
+    position: fixed;
+    top:0; left:0; width:100%; height:100%;
+    background-color: rgba(0,0,0,0.4);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--white);
+    padding: 25px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.modal-content h3 {
+    margin-bottom: 15px;
+    font-size: 16px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* PDF Area Specific Styling */
+.pdf-page {
+    background-color: var(--white);
+    padding: 10px;
+}
+
+.report-header {
+    border-bottom: 2px solid var(--dark);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.pdf-title {
+    font-size: 20px;
+    color: var(--primary);
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.report-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    font-size: 14px;
+}
+
+/* Print Overrides */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    body {
+        background-color: #fff;
+    }
+    .app-container {
+        padding: 0;
+        margin: 0;
+    }
+}

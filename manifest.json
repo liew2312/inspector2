@@ -1,0 +1,22 @@
+{
+  "name": "InspectPro PWA Home Inspection System",
+  "short_name": "InspectPro",
+  "description": "ระบบตรวจรับมอบบ้านและอาคาร แบบทำงานออฟไลน์เรียลไทม์",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#fcfcfc",
+  "theme_color": "#D90429",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192/D90429/ffffff?text=IP",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512/D90429/ffffff?text=IP",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

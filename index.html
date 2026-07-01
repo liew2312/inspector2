@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>InspectPro - ระบบตรวจบ้าน</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Using CDN for Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-container">
+            <span class="back-btn" id="backBtn" style="display: none;">&larr; ย้อนกลับ</span>
+            <h1 id="appTitle">Inspect<span class="accent">Pro</span></h1>
+        </div>
+    </header>
+
+    <!-- Main Content Area (SPA Views) -->
+    <main class="app-container">
+
+        <!-- VIEW 1: Projects List -->
+        <div id="view-projects" class="view">
+            <div class="section-header">
+                <h2>โครงการทั้งหมด</h2>
+                <button class="btn-sm" onclick="openModal('projectModal')">+ เพิ่มโครงการ</button>
+            </div>
+            <div id="project-list" class="list-container"></div>
+        </div>
+
+        <!-- VIEW 2: Plots List -->
+        <div id="view-plots" class="view" style="display: none;">
+            <div class="section-header">
+                <h2 id="current-project-title">แปลงบ้าน</h2>
+                <button class="btn-sm" onclick="openModal('plotModal')">+ เพิ่มแปลง</button>
+            </div>
+            <div id="plot-list" class="list-container"></div>
+        </div>
+
+        <!-- VIEW 3: Worksheets List -->
+        <div id="view-worksheets" class="view" style="display: none;">
+            <div class="section-header">
+                <h2 id="current-plot-title">ใบงานตรวจบ้าน</h2>
+                <button class="btn-sm" onclick="openModal('worksheetModal')">+ สร้างใบงาน</button>
+            </div>
+            <div id="worksheet-list" class="list-container"></div>
+        </div>
+
+        <!-- VIEW 4: Worksheet Detail (Form & Inspection) -->
+        <div id="view-worksheet-detail" class="view" style="display: none;">
+            <div id="pdf-export-area" class="pdf-page">
+                <div class="report-header">
+                    <h2 class="pdf-title">ใบรายงานการตรวจรับมอบบ้าน</h2>
+                    <div class="report-meta">
+                        <p><strong>โครงการ:</strong> <span id="rep-project"></span></p>
+                        <p><strong>แปลงเลขที่:</strong> <span id="rep-plot"></span></p>
+                        <p><strong>ประเภทใบงาน:</strong> <span id="rep-type"></span></p>
+                        <p><strong>วันที่ตรวจ:</strong> <span id="rep-date"></span></p>
+                    </div>
+                </div>
+
+                <!-- Defect Section -->
+                <div class="card">
+                    <h3>รายการจุดบกพร่องที่ต้องแก้ไข (Defects)</h3>
+                    <div id="defect-items-container"></div>
+                    
+                    <!-- Form input for new defect -->
+                    <div class="no-print defect-form-box">
+                        <h4>+ เพิ่มรายการจุดบกพร่อง</h4>
+                        <input type="file" id="defectPhoto" accept="image/*" capture="environment" class="input-file">
+                        <label for="defectPhoto" class="btn-secondary">📸 ถ่ายภาพ / เลือกรูป</label>
+                        <div id="photo-preview-box" class="photo-preview" style="display:none;"></div>
+                        <textarea id="defectDesc" placeholder="ระบุรายละเอียดจุดที่ต้องแก้ไข เช่น ผนังร้าว, กระเบื้องบิ่น..."></textarea>
+                        <button class="btn-primary" onclick="addDefectItem()">บันทึกจุดบกพร่องนี้</button>
+                    </div>
+                </div>
+
+                <!-- Signature Section -->
+                <div class="card signature-section">
+                    <h3>ลงนามยืนยันตรวจสอบ</h3>
+                    <div class="signature-grid">
+                        <div class="sig-wrapper">
+                            <p class="sig-label">Site Engineer (ผู้ตรวจ)</p>
+                            <div class="canvas-holder">
+                                <canvas id="canvas-se"></canvas>
+                            </div>
+                            <button class="btn-clear no-print" onclick="clearSignature('se')">ล้างลายเซ็น</button>
+                            <div class="sig-image-placeholder" id="img-se-placeholder"></div>
+                        </div>
+                        <div class="sig-wrapper" id="customer-sig-wrapper">
+                            <p class="sig-label">ลูกค้า / เจ้าของบ้าน</p>
+                            <div class="canvas-holder">
+                                <canvas id="canvas-customer"></canvas>
+                            </div>
+                            <button class="btn-clear no-print" onclick="clearSignature('customer')">ล้างลายเซ็น</button>
+                            <div class="sig-image-placeholder" id="img-customer-placeholder"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons outside PDF Area -->
+            <div class="action-bar no-print">
+                <button class="btn-primary" onclick="saveWorksheetData()">💾 บันทึกข้อมูล</button>
+                <button class="btn-accent" onclick="generatePDF()">📄 ส่งออก PDF</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODALS FOR ADDING DATA -->
+    <!-- Project Modal -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <h3>เพิ่มโครงการใหม่</h3>
+            <input type="text" id="newProjectName" placeholder="ชื่อโครงการ เช่น แสนสิริ พลัส">
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('projectModal')">ยกเลิก</button>
+                <button class="btn-primary" onclick="createProject()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Plot Modal -->
+    <div id="plotModal" class="modal">
+        <div class="modal-content">
+            <h3>เพิ่มแปลงบ้าน</h3>
+            <input type="text" id="newPlotNumber" placeholder="เลขที่แปลง เช่น A05 หรือ 99/123">
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('plotModal')">ยกเลิก</button>
+                <button class="btn-primary" onclick="createPlot()">บันทึก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worksheet Modal -->
+    <div id="worksheetModal" class="modal">
+        <div class="modal-content">
+            <h3>สร้างใบงานตรวจใหม่</h3>
+            <label for="newWorksheetType" style="display:block; margin-bottom:8px; font-size:14px;">ประเภทการตรวจ:</label>
+            <select id="newWorksheetType">
+                <option value="Stock">ใบงานตรวจบ้าน Stock (ภายใน)</option>
+                <option value="Customer">ใบงานตรวจบ้านก่อนโอนกับลูกค้า</option>
+            </select>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal('worksheetModal')">ยกเลิก</button>
+                <button class="btn-primary" onclick="createWorksheet()">สร้างใบงาน</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
