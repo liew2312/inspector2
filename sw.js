@@ -1,44 +1,54 @@
-const CACHE_NAME = 'inspectpro-cache-v2';
-const ASSETS = [
-    './',
-    './index.html',
-    './style.css',
-    './app.js',
-    './manifest.json',
-    'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
-    'https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js',
-    'https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap'
+/* Service worker — offline app shell for the AP SE inspection app */
+const CACHE = 'ap-inspect-v4';
+
+/* Must succeed for the app to work offline. */
+const CORE = [
+  'index.html',
+  'manifest.webmanifest',
+  'icon-192.png',
+  'icon-512.png',
+  'icon-maskable-512.png'
 ];
 
-self.addEventListener('install', event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME).then(cache => {
-            console.log('Caching resources...');
-            return cache.addAll(ASSETS);
-        })
-    );
+/* Nice-to-have. Cached best-effort so a missing fonts/ folder never breaks install. */
+const OPTIONAL = [
+  'fonts/AP-Light300.ttf',
+  'fonts/AP-Regular400.ttf',
+  'fonts/AP-Medium500.ttf',
+  'fonts/AP-Bold700.ttf'
+];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE).then((c) =>
+      c.addAll(CORE).then(() =>
+        Promise.all(OPTIONAL.map((u) => c.add(u).catch(() => null)))
+      )
+    ).then(() => self.skipWaiting())
+  );
 });
 
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys().then(keys => {
-            return Promise.all(
-                keys.map(key => {
-                    if (key !== CACHE_NAME) {
-                        return caches.delete(key);
-                    }
-                })
-            );
-        })
-    );
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
 
-self.addEventListener('fetch', event => {
-    event.respondWith(
-        caches.match(event.request).then(cachedResponse => {
-            return cachedResponse || fetch(event.request).catch(() => {
-                console.log('Network request failed and item not in cache.');
-            });
-        })
-    );
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  // Navigations → serve cached app shell first (offline-first SPA)
+  if (req.mode === 'navigate') {
+    e.respondWith(caches.match('index.html').then((hit) => hit || fetch(req)));
+    return;
+  }
+  e.respondWith(
+    caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+      const copy = res.clone();
+      caches.open(CACHE).then((c) => c.put(req, copy));
+      return res;
+    }).catch(() => caches.match('index.html')))
+  );
 });
