@@ -1,161 +1,1000 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>InspectPro - ระบบตรวจบ้าน</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- Using CDN for Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#921C1E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ตรวจบ้าน AP">
+<meta name="description" content="เครื่องมือวิศวกรโครงการ (SE) บันทึก defect และออกรายงานตรวจรับ/ปรับปรุงบ้าน — ใช้งานออฟไลน์ ข้อมูลเก็บในเครื่อง">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>ตรวจ &amp; ปรับปรุงบ้าน AP</title>
+<style>
+/* ── AP Thailand type (falls back gracefully if fonts/ folder is absent) ── */
+@font-face{ font-family:"AP"; src:url("fonts/AP-Light300.ttf") format("truetype"); font-weight:300; font-style:normal; font-display:swap; }
+@font-face{ font-family:"AP"; src:url("fonts/AP-Regular400.ttf") format("truetype"); font-weight:400; font-style:normal; font-display:swap; }
+@font-face{ font-family:"AP"; src:url("fonts/AP-Medium500.ttf") format("truetype"); font-weight:500; font-style:normal; font-display:swap; }
+@font-face{ font-family:"AP"; src:url("fonts/AP-Bold700.ttf") format("truetype"); font-weight:700; font-style:normal; font-display:swap; }
+
+:root{
+  --ap-red-900:#5A0B0C; --ap-red-800:#6E1214; --ap-red-700:#811618; --ap-red-600:#921C1E;
+  --ap-red-500:#A62224; --ap-red-100:#F3D4D4; --ap-red-50:#FAEBEB;
+  --ap-ink-900:#0A0A0D; --ap-ink-800:#131317; --ap-ink-700:#1E1E24; --ap-ink-500:#4A4A52;
+  --ap-ink-400:#70707A; --ap-ink-300:#9C9CA4;
+  --ap-neutral-0:#FFFFFF; --ap-neutral-100:#F8F7F3; --ap-neutral-200:#F0EEE8;
+  --ap-neutral-300:#E4E1D8; --ap-neutral-400:#C9C6BC; --ap-neutral-500:#A09E94;
+  --success:#2F7A4F; --success-bg:#EAF2ED; --warning:#9B6612; --warning-bg:#F6ECD6;
+  --border-subtle:var(--ap-neutral-300); --border-default:var(--ap-neutral-400);
+  --fg-1:var(--ap-ink-800); --fg-2:var(--ap-ink-500); --fg-3:var(--ap-ink-400);
+  --font-sans:"AP","Helvetica Neue","Noto Sans Thai",system-ui,-apple-system,sans-serif;
+  --shadow-sm:0 1px 2px rgba(20,14,14,.05);
+  --shadow-md:0 4px 14px rgba(20,14,14,.07);
+  --shadow-lg:0 -10px 34px rgba(20,14,14,.16);
+  --safe-t:env(safe-area-inset-top); --safe-b:env(safe-area-inset-bottom);
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; height:100%; }
+body{
+  background:var(--ap-neutral-200);
+  font-family:var(--font-sans); color:var(--fg-1);
+  -webkit-tap-highlight-color:transparent; overscroll-behavior:none;
+  -webkit-text-size-adjust:100%; text-size-adjust:100%;
+}
+button, input, textarea{ font-family:inherit; color:inherit; }
+img{ max-width:100%; display:block; }
+
+/* full-bleed app shell that always fits the viewport height */
+#app{ height:100dvh; height:100svh; }
+.app-shell{
+  position:relative; height:100dvh; height:100svh;
+  width:100%; max-width:520px; margin:0 auto;
+  background:var(--ap-neutral-100); overflow:hidden;
+}
+@media (min-width:521px){ .app-shell{ box-shadow:0 0 0 1px var(--ap-neutral-300); } }
+
+.screen{ height:100%; display:flex; flex-direction:column; }
+.scroll{ flex:1 1 auto; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+.scroll::-webkit-scrollbar{ width:0; }
+
+.tapopt{ cursor:pointer; user-select:none; -webkit-user-select:none; transition:transform .12s ease, background .12s ease, border-color .12s ease; }
+.tapopt:active{ transform:scale(.98); }
+
+/* clean top bar (white, minimal, red accents) */
+.topbar{ flex:0 0 auto; background:#fff; border-bottom:1px solid var(--border-subtle);
+  padding:calc(12px + var(--safe-t)) 16px 12px; }
+.topbar-row{ display:flex; align-items:center; gap:10px; min-height:34px; }
+.back-link{ display:inline-flex; align-items:center; gap:4px; color:var(--ap-red-600); font-size:14px; font-weight:500; min-width:0; }
+.back-link span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.icon-btn{ width:36px; height:36px; border-radius:999px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--ap-neutral-100); color:var(--fg-2); border:1px solid var(--border-subtle); }
+.topbar h1{ font-size:22px; font-weight:700; letter-spacing:-.01em; margin:12px 0 0; }
+.topbar .sub{ font-size:13px; color:var(--fg-2); margin-top:2px; }
+
+.stat-row{ display:flex; gap:8px; margin-top:14px; }
+.stat{ flex:1; background:var(--ap-neutral-100); border:1px solid var(--border-subtle); border-radius:12px; padding:9px 12px; }
+.stat b{ display:block; font-size:19px; font-weight:700; font-variant-numeric:tabular-nums; }
+.stat span{ font-size:11px; color:var(--fg-2); }
+
+.fld{ width:100%; font-family:var(--font-sans); font-size:16px; color:var(--fg-1); background:#fff;
+  border:1px solid var(--border-default); border-radius:12px; padding:12px 14px; outline:none; }
+.fld:focus{ border-color:var(--ap-red-600); box-shadow:0 0 0 3px rgba(146,28,30,.12); }
+textarea.fld{ resize:none; line-height:1.45; }
+.field-label{ font-size:13px; font-weight:600; margin-bottom:7px; }
+
+.chip{ font-size:13px; font-weight:500; padding:8px 14px; border-radius:999px; background:#fff; color:var(--fg-1);
+  border:1px solid var(--border-default); display:inline-flex; align-items:center; gap:6px; }
+.chip.is-active{ background:var(--ap-ink-800); color:#fff; border-color:var(--ap-ink-800); }
+.chip-row{ display:flex; gap:8px; flex-wrap:wrap; }
+
+.sev-chip{ flex:1; text-align:center; font-size:13px; font-weight:600; padding:11px 4px; border-radius:12px; background:#fff; border:1.5px solid var(--border-default); color:var(--fg-2); }
+.sev-chip.is-active[data-value="high"]{ background:var(--ap-red-50); color:var(--ap-red-600); border-color:var(--ap-red-600); }
+.sev-chip.is-active[data-value="mid"]{ background:var(--warning-bg); color:var(--warning); border-color:var(--warning); }
+.sev-chip.is-active[data-value="low"]{ background:var(--ap-neutral-200); color:var(--fg-2); border-color:var(--ap-neutral-500); }
+
+/* worksheet mode selector — red (handover) vs ink (stock), no third colour */
+.mode-card{ border:1.5px solid var(--border-default); background:#fff; border-radius:14px; padding:14px 15px; display:flex; gap:12px; align-items:flex-start; }
+.mode-card .dot{ width:22px; height:22px; border-radius:999px; border:2px solid var(--ap-neutral-400); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; }
+.mode-card .dot span{ width:11px; height:11px; border-radius:999px; background:transparent; }
+.mode-card.is-active[data-value="handover"]{ border-color:var(--ap-red-600); }
+.mode-card.is-active[data-value="handover"] .dot{ border-color:var(--ap-red-600); }
+.mode-card.is-active[data-value="handover"] .dot span{ background:var(--ap-red-600); }
+.mode-card.is-active[data-value="handover"] .mode-title{ color:var(--ap-red-600); }
+.mode-card.is-active[data-value="stock"]{ border-color:var(--ap-ink-800); }
+.mode-card.is-active[data-value="stock"] .dot{ border-color:var(--ap-ink-800); }
+.mode-card.is-active[data-value="stock"] .dot span{ background:var(--ap-ink-800); }
+.mode-card.is-active[data-value="stock"] .mode-title{ color:var(--ap-ink-800); }
+.mode-title{ font-size:15px; font-weight:700; color:var(--fg-1); }
+.mode-desc{ font-size:12.5px; color:var(--fg-2); margin-top:2px; line-height:1.4; }
+
+.tag{ font-size:11px; font-weight:700; padding:4px 10px; border-radius:999px; white-space:nowrap; }
+.tag-handover{ background:var(--ap-red-50); color:var(--ap-red-700); }
+.tag-stock{ background:var(--ap-neutral-200); color:var(--ap-ink-700); }
+
+.btn-primary{ background:var(--ap-red-600); color:#fff; border-radius:999px; height:52px; display:flex; align-items:center; justify-content:center; gap:9px; font-size:16px; font-weight:600; box-shadow:var(--shadow-md); border:none; width:100%; }
+.btn-primary[disabled], .btn-primary.is-disabled{ background:var(--ap-neutral-400); box-shadow:none; }
+.btn-ghost{ background:#fff; color:var(--ap-red-600); border:1.5px solid var(--ap-red-600); border-radius:999px; height:52px; display:flex; align-items:center; justify-content:center; gap:8px; font-size:15px; font-weight:600; }
+.btn-outline-round{ flex-shrink:0; width:52px; height:52px; border-radius:999px; background:#fff; border:1.5px solid var(--fg-1); display:flex; align-items:center; justify-content:center; color:var(--fg-1); }
+
+.bottom-bar{ flex:0 0 auto; padding:12px 16px calc(14px + var(--safe-b)); background:var(--ap-neutral-100); border-top:1px solid var(--border-subtle); display:flex; gap:10px; }
+
+.card{ background:#fff; border:1px solid var(--border-subtle); border-radius:16px; box-shadow:var(--shadow-sm); }
+.progress-track{ flex:1; height:6px; border-radius:999px; background:var(--ap-neutral-200); overflow:hidden; }
+.progress-fill{ height:100%; background:var(--ap-red-600); border-radius:999px; }
+
+.thumb{ background-color:var(--ap-neutral-200); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color:var(--ap-neutral-500); }
+
+.overlay-backdrop{ position:absolute; inset:0; background:rgba(19,19,23,.42); z-index:60; }
+.overlay-sheet{ position:absolute; left:0; right:0; bottom:0; background:var(--ap-neutral-100); border-radius:24px 24px 0 0;
+  padding:14px 18px calc(22px + var(--safe-b)); max-height:94%; overflow-y:auto; box-shadow:var(--shadow-lg); z-index:61; }
+.sheet-grabber{ width:40px; height:5px; border-radius:999px; background:var(--ap-neutral-400); margin:0 auto 16px; }
+
+.photo-tile{ width:74px; height:74px; border-radius:14px; background-size:cover; background-position:center; position:relative; border:1px solid var(--border-subtle); background-color:var(--ap-neutral-200); flex-shrink:0; }
+.photo-remove{ position:absolute; top:-6px; right:-6px; width:22px; height:22px; border-radius:999px; background:#131317; color:#fff; display:flex; align-items:center; justify-content:center; }
+
+.sign-box{ background:#fff; border:1px solid var(--border-subtle); border-radius:14px; padding:13px 14px; }
+.sign-slot{ border:1.5px dashed var(--border-default); border-radius:12px; height:110px; display:flex; align-items:center; justify-content:center; color:var(--fg-3); font-size:13px; background:var(--ap-neutral-100); background-size:contain; background-repeat:no-repeat; background-position:center; }
+.sign-slot.signed{ border-style:solid; border-color:var(--border-subtle); background-color:#fff; }
+#sig-canvas{ width:100%; height:230px; background:#fff; border:1px solid var(--border-default); border-radius:12px; touch-action:none; display:block; }
+
+.empty-state{ text-align:center; padding:44px 20px; color:var(--fg-3); font-size:14px; line-height:1.5; }
+.hidden-file-input{ position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; }
+
+@media print{ .app-shell{ display:none; } }
+</style>
 </head>
 <body>
+<div id="app"></div>
+<input type="file" id="cam-input" class="hidden-file-input" accept="image/*" capture="environment">
+<input type="file" id="gal-input" class="hidden-file-input" accept="image/*" multiple>
+<script>
+"use strict";
+/* ============================================================
+   ตรวจ & ปรับปรุงบ้าน AP — เครื่องมือวิศวกรโครงการ (SE)
+   Vanilla JS · offline-first PWA · no network · no build step
+   โครงสร้าง: โครงการ → แปลง → ใบงานตรวจ (stock / ก่อนโอน) → รายการ defect
+   ============================================================ */
 
-    <!-- Header -->
-    <header class="app-header">
-        <div class="header-container">
-            <span class="back-btn" id="backBtn" style="display: none;">&larr; ย้อนกลับ</span>
-            <h1 id="appTitle">Inspect<span class="accent">Pro</span></h1>
-        </div>
-    </header>
+/* ---------- constants ---------- */
+var LS_KEY  = 'ap_inspect_v4';
+var V3_KEY  = 'ap_inspect_v3';
+var V2_KEY  = 'ap_se_inspect_v2';
+var MAX_PHOTOS_PER_DEFECT = 6;
 
-    <!-- Main Content Area (SPA Views) -->
-    <main class="app-container">
+var CATS = [
+  { id:'paint', name:'สี' }, { id:'tile', name:'กระเบื้อง' }, { id:'elec', name:'ไฟฟ้า' },
+  { id:'plumb', name:'ประปา' }, { id:'door', name:'ประตู-หน้าต่าง' }, { id:'wood', name:'งานไม้' }, { id:'ceil', name:'ฝ้า/ผนัง' },
+];
+var SEV = {
+  high:{ name:'ร้ายแรง', color:'#921C1E' },
+  mid:  { name:'ปานกลาง', color:'#9B6612' },
+  low:  { name:'เล็กน้อย', color:'#4A4A52' },
+};
+var STATUS = {
+  open:{ name:'รอแก้', color:'#921C1E', bg:'#FAEBEB' },
+  prog:{ name:'กำลังแก้', color:'#9B6612', bg:'#F6ECD6' },
+  done:{ name:'แก้แล้ว', color:'#2F7A4F', bg:'#EAF2ED' },
+};
+var STATUS_ORDER = ['open','prog','done'];
+var ROOMS = ['ห้องนั่งเล่น','ครัว','ห้องนอนใหญ่','ห้องนอน 2','ห้องน้ำ','ระเบียง','โรงจอดรถ','ภายนอก'];
+var TYPES = ['บ้านเดี่ยว','บ้านแฝด','ทาวน์โฮม','คอนโดฯ'];
 
-        <!-- VIEW 1: Projects List -->
-        <div id="view-projects" class="view">
-            <div class="section-header">
-                <h2>โครงการทั้งหมด</h2>
-                <button class="btn-sm" onclick="openModal('projectModal')">+ เพิ่มโครงการ</button>
-            </div>
-            <div id="project-list" class="list-container"></div>
-        </div>
+/* ---------- utils ---------- */
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function attr(t){ return esc(t); }
+function styleUrl(u){ return u ? "background-image:url(" + JSON.stringify(u).replace(/"/g,"'") + ")" : ''; }
+function todayStr(){ var d=new Date(); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); }
 
-        <!-- VIEW 2: Plots List -->
-        <div id="view-plots" class="view" style="display: none;">
-            <div class="section-header">
-                <h2 id="current-project-title">แปลงบ้าน</h2>
-                <button class="btn-sm" onclick="openModal('plotModal')">+ เพิ่มแปลง</button>
-            </div>
-            <div id="plot-list" class="list-container"></div>
-        </div>
+function downscalePhoto(file){
+  return new Promise(function(resolve){
+    var r = new FileReader();
+    r.onload = function(){
+      var img = new Image();
+      img.onload = function(){
+        var max = 1000, w = img.width, h = img.height;
+        var sc = Math.min(1, max / Math.max(w, h));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(w * sc));
+        c.height = Math.max(1, Math.round(h * sc));
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = function(){ resolve(null); };
+      img.src = r.result;
+    };
+    r.onerror = function(){ resolve(null); };
+    r.readAsDataURL(file);
+  });
+}
 
-        <!-- VIEW 3: Worksheets List -->
-        <div id="view-worksheets" class="view" style="display: none;">
-            <div class="section-header">
-                <h2 id="current-plot-title">ใบงานตรวจบ้าน</h2>
-                <button class="btn-sm" onclick="openModal('worksheetModal')">+ สร้างใบงาน</button>
-            </div>
-            <div id="worksheet-list" class="list-container"></div>
-        </div>
+/* ---------- storage: structured data (localStorage) ---------- */
+var Store = {
+  load: function(key){
+    try { var raw = localStorage.getItem(key||LS_KEY); return raw ? JSON.parse(raw) : null; }
+    catch(e){ return null; }
+  },
+  save: function(projects){
+    try { localStorage.setItem(LS_KEY, JSON.stringify(projects)); return true; }
+    catch(e){ alert('บันทึกข้อมูลไม่สำเร็จ — พื้นที่จัดเก็บในเครื่องอาจเต็ม'); return false; }
+  }
+};
 
-        <!-- VIEW 4: Worksheet Detail (Form & Inspection) -->
-        <div id="view-worksheet-detail" class="view" style="display: none;">
-            <div id="pdf-export-area" class="pdf-page">
-                <div class="report-header">
-                    <h2 class="pdf-title">ใบรายงานการตรวจรับมอบบ้าน</h2>
-                    <div class="report-meta">
-                        <p><strong>โครงการ:</strong> <span id="rep-project"></span></p>
-                        <p><strong>แปลงเลขที่:</strong> <span id="rep-plot"></span></p>
-                        <p><strong>ประเภทใบงาน:</strong> <span id="rep-type"></span></p>
-                        <p><strong>วันที่ตรวจ:</strong> <span id="rep-date"></span></p>
-                    </div>
-                </div>
+/* ---------- storage: photos (IndexedDB, falls back to localStorage) ---------- */
+var Photos = (function(){
+  var dbPromise = null;
+  var FALLBACK_KEY = 'ap_inspect_photos_fallback';
+  function openDB(){
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise(function(resolve){
+      if (!('indexedDB' in window)) { resolve(null); return; }
+      try {
+        var req = indexedDB.open('ap_inspect_photos_db', 1);
+        req.onupgradeneeded = function(){ req.result.createObjectStore('photos'); };
+        req.onsuccess = function(){ resolve(req.result); };
+        req.onerror = function(){ resolve(null); };
+      } catch(e){ resolve(null); }
+    });
+    return dbPromise;
+  }
+  function fallbackAll(){ try { return JSON.parse(localStorage.getItem(FALLBACK_KEY) || '{}'); } catch(e){ return {}; } }
+  function fallbackSave(map){ try { localStorage.setItem(FALLBACK_KEY, JSON.stringify(map)); return true; } catch(e){ return false; } }
+  function put(dataUrl){
+    return openDB().then(function(db){
+      var id = uid();
+      if (db){
+        return new Promise(function(resolve){
+          var tx = db.transaction('photos','readwrite');
+          tx.objectStore('photos').put(dataUrl, id);
+          tx.oncomplete = function(){ resolve(id); };
+          tx.onerror = function(){ resolve(id); };
+        });
+      }
+      var map = fallbackAll(); map[id] = dataUrl; fallbackSave(map);
+      return id;
+    });
+  }
+  function get(id){
+    if (!id) return Promise.resolve(null);
+    return openDB().then(function(db){
+      if (db){
+        return new Promise(function(resolve){
+          var tx = db.transaction('photos','readonly');
+          var req = tx.objectStore('photos').get(id);
+          req.onsuccess = function(){ resolve(req.result || null); };
+          req.onerror = function(){ resolve(null); };
+        });
+      }
+      return fallbackAll()[id] || null;
+    });
+  }
+  function del(id){
+    return openDB().then(function(db){
+      if (db){ try { db.transaction('photos','readwrite').objectStore('photos').delete(id); } catch(e){} return; }
+      var map = fallbackAll(); delete map[id]; fallbackSave(map);
+    });
+  }
+  return { put:put, get:get, del:del };
+})();
 
-                <!-- Defect Section -->
-                <div class="card">
-                    <h3>รายการจุดบกพร่องที่ต้องแก้ไข (Defects)</h3>
-                    <div id="defect-items-container"></div>
-                    
-                    <!-- Form input for new defect -->
-                    <div class="no-print defect-form-box">
-                        <h4>+ เพิ่มรายการจุดบกพร่อง</h4>
-                        <input type="file" id="defectPhoto" accept="image/*" capture="environment" class="input-file">
-                        <label for="defectPhoto" class="btn-secondary">📸 ถ่ายภาพ / เลือกรูป</label>
-                        <div id="photo-preview-box" class="photo-preview" style="display:none;"></div>
-                        <textarea id="defectDesc" placeholder="ระบุรายละเอียดจุดที่ต้องแก้ไข เช่น ผนังร้าว, กระเบื้องบิ่น..."></textarea>
-                        <button class="btn-primary" onclick="addDefectItem()">บันทึกจุดบกพร่องนี้</button>
-                    </div>
-                </div>
+/* ---------- migration → v4 (โครงการ → แปลง → ใบงานตรวจ → defect) ---------- */
+function newSheet(mode, round, extra){
+  return Object.assign({ id:uid(), mode:mode||'handover', round:round||1, date:'', inspector:'',
+    note:'', defects:[], sigSE:null, sigSEName:'', sigCust:null, sigCustName:'', createdAt:Date.now() }, extra||{});
+}
+function migrate(){
+  var v4 = Store.load(LS_KEY);
+  if (v4 && v4.length) return Promise.resolve(v4);
 
-                <!-- Signature Section -->
-                <div class="card signature-section">
-                    <h3>ลงนามยืนยันตรวจสอบ</h3>
-                    <div class="signature-grid">
-                        <div class="sig-wrapper">
-                            <p class="sig-label">Site Engineer (ผู้ตรวจ)</p>
-                            <div class="canvas-holder">
-                                <canvas id="canvas-se"></canvas>
-                            </div>
-                            <button class="btn-clear no-print" onclick="clearSignature('se')">ล้างลายเซ็น</button>
-                            <div class="sig-image-placeholder" id="img-se-placeholder"></div>
-                        </div>
-                        <div class="sig-wrapper" id="customer-sig-wrapper">
-                            <p class="sig-label">ลูกค้า / เจ้าของบ้าน</p>
-                            <div class="canvas-holder">
-                                <canvas id="canvas-customer"></canvas>
-                            </div>
-                            <button class="btn-clear no-print" onclick="clearSignature('customer')">ล้างลายเซ็น</button>
-                            <div class="sig-image-placeholder" id="img-customer-placeholder"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  // v3: mode was on the project; units held defects directly
+  var v3 = Store.load(V3_KEY);
+  if (v3 && v3.length){
+    var out3 = v3.map(function(p){
+      return {
+        id:p.id||uid(), name:p.name||'', details:p.details||'', type:p.type||TYPES[0], createdAt:p.createdAt||Date.now(),
+        units:(p.units||[]).map(function(u){
+          var sheet = newSheet(p.mode||'handover', 1, { date:u.appt||'', defects:u.defects||[] });
+          return { id:u.id||uid(), code:u.code||'', customer:u.customer||'', note:u.note||'', createdAt:u.createdAt||Date.now(), sheets:[sheet] };
+        })
+      };
+    });
+    Store.save(out3);
+    return Promise.resolve(out3);
+  }
 
-            <!-- Action buttons outside PDF Area -->
-            <div class="action-bar no-print">
-                <button class="btn-primary" onclick="saveWorksheetData()">💾 บันทึกข้อมูล</button>
-                <button class="btn-accent" onclick="generatePDF()">📄 ส่งออก PDF</button>
-            </div>
-        </div>
+  // v2: old prototype demo (photos as inline urls) → build v4 + push photos to IndexedDB
+  var v2 = Store.load(V2_KEY);
+  if (v2 && v2.length){
+    var chain = Promise.resolve(); var out2 = [];
+    v2.forEach(function(p){
+      var np = { id:p.id||uid(), name:p.name||'', details:'', type:p.type||TYPES[0], createdAt:Date.now(), units:[] };
+      out2.push(np);
+      (p.units||[]).forEach(function(u){
+        var sh = newSheet(p.mode||'handover', 1, { date:u.appt||'' });
+        var nu = { id:u.id||uid(), code:u.code||'', customer:u.customer||'', note:u.note||'', createdAt:Date.now(), sheets:[sh] };
+        np.units.push(nu);
+        (u.defects||[]).forEach(function(d){
+          var nd = { id:d.id||uid(), room:d.room||ROOMS[0], cat:d.cat||CATS[0].id, sev:d.sev||'mid', status:d.status||'open', note:d.note||'', photoIds:[], time:d.time||'', createdAt:Date.now() };
+          sh.defects.push(nd);
+          (d.photos||[]).forEach(function(url){ chain = chain.then(function(){ return Photos.put(url); }).then(function(id){ nd.photoIds.push(id); }); });
+        });
+      });
+    });
+    return chain.then(function(){ Store.save(out2); return out2; });
+  }
+  return Promise.resolve([]);
+}
 
-    </main>
+/* ---------- in-memory state ---------- */
+var projects = [];
+var photoUrlCache = new Map();
+var pendingPhotos = [];      /* [{url, photoId|null}] while the defect sheet is open */
+var sigPad = null;           /* active signature pad controller */
 
-    <!-- MODALS FOR ADDING DATA -->
-    <!-- Project Modal -->
-    <div id="projectModal" class="modal">
-        <div class="modal-content">
-            <h3>เพิ่มโครงการใหม่</h3>
-            <input type="text" id="newProjectName" placeholder="ชื่อโครงการ เช่น แสนสิริ พลัส">
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeModal('projectModal')">ยกเลิก</button>
-                <button class="btn-primary" onclick="createProject()">บันทึก</button>
-            </div>
-        </div>
-    </div>
+var state = {
+  screen: 'projects',        /* projects | project | unit | sheet */
+  curP:null, curU:null, curS:null,
+  overlay:null,              /* null | project | unit | sheet | defect | signature */
+  formMode:'add', editId:null,
+  formType:TYPES[0], formSheetMode:'handover',
+  formCat:CATS[0].id, formSev:'mid', formRoom:ROOMS[0],
+  sigRole:'se',
+};
 
-    <!-- Plot Modal -->
-    <div id="plotModal" class="modal">
-        <div class="modal-content">
-            <h3>เพิ่มแปลงบ้าน</h3>
-            <input type="text" id="newPlotNumber" placeholder="เลขที่แปลง เช่น A05 หรือ 99/123">
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeModal('plotModal')">ยกเลิก</button>
-                <button class="btn-primary" onclick="createPlot()">บันทึก</button>
-            </div>
-        </div>
-    </div>
+/* ---------- data helpers ---------- */
+function findProject(pid){ return projects.find(function(p){ return p.id===pid; }) || null; }
+function findUnit(p, uidv){ return p ? (p.units.find(function(u){ return u.id===uidv; }) || null) : null; }
+function findSheet(u, sid){ return u ? (u.sheets.find(function(s){ return s.id===sid; }) || null) : null; }
+function findDefect(s, did){ return s ? (s.defects.find(function(d){ return d.id===did; }) || null) : null; }
+function persist(){ Store.save(projects); }
 
-    <!-- Worksheet Modal -->
-    <div id="worksheetModal" class="modal">
-        <div class="modal-content">
-            <h3>สร้างใบงานตรวจใหม่</h3>
-            <label for="newWorksheetType" style="display:block; margin-bottom:8px; font-size:14px;">ประเภทการตรวจ:</label>
-            <select id="newWorksheetType">
-                <option value="Stock">ใบงานตรวจบ้าน Stock (ภายใน)</option>
-                <option value="Customer">ใบงานตรวจบ้านก่อนโอนกับลูกค้า</option>
-            </select>
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeModal('worksheetModal')">ยกเลิก</button>
-                <button class="btn-primary" onclick="createWorksheet()">สร้างใบงาน</button>
-            </div>
-        </div>
-    </div>
+function modeMeta(mode){
+  return mode === 'stock'
+    ? { label:'ปรับปรุง Stock', tag:'tag-stock', work:'งานปรับปรุงบ้าน Stock' }
+    : { label:'ตรวจก่อนโอน', tag:'tag-handover', work:'งานส่งมอบลูกค้า' };
+}
+function catName(id){ var c = CATS.find(function(x){ return x.id===id; }); return c ? c.name : id; }
 
-    <script src="app.js"></script>
+/* counts */
+function sheetDefects(s){ return s.defects || []; }
+function unitDefects(u){ var a=[]; (u.sheets||[]).forEach(function(s){ a=a.concat(s.defects||[]); }); return a; }
+function projDefects(p){ var a=[]; (p.units||[]).forEach(function(u){ a=a.concat(unitDefects(u)); }); return a; }
+function openOf(list){ return list.filter(function(d){ return d.status!=='done'; }).length; }
+function progressOf(list){ if(!list.length) return 0; var d=list.filter(function(x){return x.status==='done';}).length; return Math.round(d/list.length*100); }
+function unitSheetCount(u){ return (u.sheets||[]).length; }
+
+function sheetTitle(s){ return 'ใบงานตรวจ ครั้งที่ ' + (s.round||1); }
+function sheetStatusMeta(s){
+  var ds = sheetDefects(s);
+  if (!ds.length) return { label:'ยังไม่บันทึก', color:'#4A4A52', bg:'#F0EEE8' };
+  return openOf(ds) ? { label:'มี defect', color:'#921C1E', bg:'#FAEBEB' } : { label:'ครบแล้ว', color:'#2F7A4F', bg:'#EAF2ED' };
+}
+
+/* ---------- render root ---------- */
+function render(){
+  var root = document.getElementById('app');
+  root.innerHTML = renderApp();
+  hydrateLazyPhotos(root);
+  if (state.overlay === 'signature') initSignaturePad();
+}
+function hydrateLazyPhotos(container){
+  container.querySelectorAll('[data-lazy-photo]').forEach(function(el){
+    var id = el.getAttribute('data-lazy-photo');
+    if (photoUrlCache.has(id)){ el.style.backgroundImage = "url("+photoUrlCache.get(id)+")"; el.removeAttribute('data-lazy-photo'); return; }
+    Photos.get(id).then(function(url){ if (url){ photoUrlCache.set(id,url); el.style.backgroundImage="url("+url+")"; } el.removeAttribute('data-lazy-photo'); });
+  });
+}
+function renderApp(){
+  var screenHtml = '';
+  if (state.screen==='projects') screenHtml = renderProjectsScreen();
+  else if (state.screen==='project') screenHtml = renderProjectScreen();
+  else if (state.screen==='unit') screenHtml = renderUnitScreen();
+  else if (state.screen==='sheet') screenHtml = renderSheetScreen();
+
+  var overlayHtml = '';
+  if (state.overlay==='project') overlayHtml = renderProjectOverlay();
+  else if (state.overlay==='unit') overlayHtml = renderUnitOverlay();
+  else if (state.overlay==='sheet') overlayHtml = renderSheetOverlay();
+  else if (state.overlay==='defect') overlayHtml = renderDefectOverlay();
+  else if (state.overlay==='signature') overlayHtml = renderSignatureOverlay();
+
+  return '<div class="app-shell">' + screenHtml + overlayHtml + '</div>';
+}
+function iconBtn(action, extra, path){
+  return '<span class="tapopt icon-btn" data-action="'+action+'"'+(extra||'')+'>' +
+    '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">'+path+'</svg></span>';
+}
+var IC_EDIT='<path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>';
+var IC_HOME='<path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.5"></path>';
+var IC_PDF='<path d="M14 3v5h5"></path><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8Z"></path><path d="M9 13h6M9 17h4"></path>';
+var IC_PLUS='<path d="M12 5v14M5 12h14"></path>';
+var IC_BACK='<path d="m15 18-6-6 6-6"></path>';
+
+/* ---------- screen: projects (home) ---------- */
+function renderProjectsScreen(){
+  var body;
+  if (!projects.length){
+    body = '<div class="empty-state">' +
+      '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" style="margin-bottom:14px;"><path d="M3 21V8l9-5 9 5v13"></path><path d="M9 21v-6h6v6"></path></svg>' +
+      '<div>ยังไม่มีโครงการ<br>กดปุ่มด้านล่างเพื่อเพิ่มโครงการแรก</div></div>';
+  } else {
+    body = '<div style="display:flex;flex-direction:column;gap:12px;">' + projects.map(function(p){
+      var ds = projDefects(p), prog = progressOf(ds), open = openOf(ds), total = ds.length;
+      var openLabel = open>0 ? (open+' รอแก้') : (total>0 ? 'ครบแล้ว' : 'ยังไม่เริ่ม');
+      return '<div class="card tapopt" data-action="open-project" data-id="'+attr(p.id)+'" style="padding:16px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+          '<div><div style="font-size:18px;font-weight:700;letter-spacing:-.01em;">'+esc(p.name)+'</div>' +
+          '<div style="font-size:13px;color:var(--fg-2);margin-top:2px;">'+esc(p.type)+'</div></div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-top:14px;">' +
+          '<div class="progress-track"><div class="progress-fill" style="width:'+prog+'%;"></div></div>' +
+          '<span style="font-size:12px;color:var(--fg-3);font-variant-numeric:tabular-nums;">'+prog+'%</span></div>' +
+        '<div style="display:flex;gap:16px;margin-top:12px;font-size:13px;">' +
+          '<span style="color:var(--fg-2);">แปลง <b style="color:var(--fg-1);">'+p.units.length+'</b></span>' +
+          '<span style="color:var(--fg-2);">defect <b style="color:var(--fg-1);">'+total+'</b></span>' +
+          '<span style="color:var(--ap-red-600);font-weight:600;margin-left:auto;">'+esc(openLabel)+'</span>' +
+        '</div></div>';
+    }).join('') + '</div>';
+  }
+  return '<div class="screen">' +
+    '<div class="topbar"><div style="font-size:13px;color:var(--fg-2);letter-spacing:.02em;">AP · วิศวกรโครงการ</div>' +
+      '<h1>โครงการของฉัน</h1></div>' +
+    '<div class="scroll" style="padding:16px;">'+body+'</div>' +
+    '<div class="bottom-bar"><button type="button" class="btn-primary tapopt" data-action="open-overlay-project" data-mode="add">' +
+      '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">'+IC_PLUS+'</svg>เพิ่มโครงการ</button></div>' +
+  '</div>';
+}
+
+/* ---------- screen: project (list of แปลง) ---------- */
+function renderProjectScreen(){
+  var P = findProject(state.curP);
+  if (!P){ state.screen='projects'; return renderProjectsScreen(); }
+  var ds = projDefects(P);
+  var body;
+  if (!P.units.length){
+    body = '<div class="empty-state">ยังไม่มีแปลง — กด “เพิ่มแปลง” ด้านล่าง</div>';
+  } else {
+    body = '<div style="display:flex;flex-direction:column;gap:12px;">' + P.units.map(function(u){
+      var uds = unitDefects(u), open = openOf(uds);
+      var openLabel = open>0 ? (open+' รอแก้') : (uds.length>0 ? 'ครบแล้ว' : 'ยังไม่ตรวจ');
+      return '<div class="card tapopt" data-action="open-unit" data-id="'+attr(u.id)+'" style="padding:15px 16px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">' +
+          '<div style="min-width:0;"><div style="font-size:17px;font-weight:700;">'+esc(u.code)+'</div>' +
+          '<div style="font-size:13px;color:var(--fg-2);margin-top:1px;">'+esc(u.customer || 'ยังไม่ระบุลูกค้า')+'</div></div>' +
+          '<span class="tag tag-stock">'+unitSheetCount(u)+' ใบงาน</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:16px;margin-top:12px;font-size:13px;">' +
+          '<span style="color:var(--fg-2);">defect <b style="color:var(--fg-1);">'+uds.length+'</b></span>' +
+          '<span style="color:var(--ap-red-600);font-weight:600;">'+esc(openLabel)+'</span></div></div>';
+    }).join('') + '</div>';
+  }
+  var detailsHtml = P.details ? '<div class="sub" style="margin-top:6px;">'+esc(P.details)+'</div>' : '';
+  return '<div class="screen">' +
+    '<div class="topbar">' +
+      '<div class="topbar-row">' +
+        '<span class="tapopt back-link" data-action="back-projects" style="flex:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+IC_BACK+'</svg><span>โครงการ</span></span>' +
+        iconBtn('open-overlay-project',' data-mode="edit" data-id="'+attr(P.id)+'"',IC_EDIT) +
+        iconBtn('back-projects','',IC_HOME) +
+      '</div>' +
+      '<h1>'+esc(P.name)+'</h1>' +
+      '<div class="sub">'+esc(P.type)+'</div>' + detailsHtml +
+      '<div class="stat-row">' +
+        '<div class="stat"><b>'+P.units.length+'</b><span>แปลง</span></div>' +
+        '<div class="stat"><b style="color:var(--ap-red-600);">'+openOf(ds)+'</b><span>defect รอแก้</span></div>' +
+        '<div class="stat"><b>'+progressOf(ds)+'%</b><span>คืบหน้า</span></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="scroll" style="padding:16px;"><div style="font-size:15px;font-weight:700;margin-bottom:12px;">แปลง / บ้าน</div>'+body+'</div>' +
+    '<div class="bottom-bar">' +
+      '<button type="button" class="btn-primary tapopt" data-action="open-overlay-unit" data-mode="add"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">'+IC_PLUS+'</svg>เพิ่มแปลง</button>' +
+    '</div></div>';
+}
+
+/* ---------- screen: unit (list of ใบงานตรวจ) ---------- */
+function renderUnitScreen(){
+  var P = findProject(state.curP), U = findUnit(P, state.curU);
+  if (!P || !U){ state.screen='project'; return renderProjectScreen(); }
+  var body;
+  if (!U.sheets.length){
+    body = '<div class="empty-state">ยังไม่มีใบงานตรวจ<br>กด “เพิ่มใบงานตรวจ” แล้วเลือกประเภทงาน</div>';
+  } else {
+    body = '<div style="display:flex;flex-direction:column;gap:12px;">' + U.sheets.slice().sort(function(a,b){ return (a.round||0)-(b.round||0); }).map(function(s){
+      var mm = modeMeta(s.mode), sm = sheetStatusMeta(s), ds = sheetDefects(s);
+      return '<div class="card tapopt" data-action="open-sheet" data-id="'+attr(s.id)+'" style="padding:15px 16px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+          '<div style="font-size:16px;font-weight:700;">ครั้งที่ '+(s.round||1)+'</div>' +
+          '<span class="tag '+mm.tag+'">'+esc(mm.label)+'</span></div>' +
+        '<div style="font-size:12.5px;color:var(--fg-2);margin-top:4px;">'+(s.date?esc(s.date):'ยังไม่ระบุวันที่')+(s.inspector?' · ผู้ตรวจ '+esc(s.inspector):'')+'</div>' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-top:11px;font-size:13px;">' +
+          '<span style="color:var(--fg-2);">defect <b style="color:var(--fg-1);">'+ds.length+'</b></span>' +
+          '<span style="font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:'+sm.bg+';color:'+sm.color+';margin-left:auto;">'+esc(sm.label)+'</span></div></div>';
+    }).join('') + '</div>';
+  }
+  return '<div class="screen">' +
+    '<div class="topbar">' +
+      '<div class="topbar-row">' +
+        '<span class="tapopt back-link" data-action="back-project" style="flex:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+IC_BACK+'</svg><span>'+esc(P.name)+'</span></span>' +
+        iconBtn('open-overlay-unit',' data-mode="edit" data-id="'+attr(U.id)+'"',IC_EDIT) +
+        iconBtn('back-projects','',IC_HOME) +
+      '</div>' +
+      '<h1>'+esc(U.code)+'</h1>' +
+      '<div class="sub">'+esc(U.customer || 'ยังไม่ระบุลูกค้า')+(U.note?' · '+esc(U.note):'')+'</div>' +
+    '</div>' +
+    '<div class="scroll" style="padding:16px;"><div style="font-size:15px;font-weight:700;margin-bottom:12px;">ใบงานตรวจ ('+U.sheets.length+')</div>'+body+'</div>' +
+    '<div class="bottom-bar">' +
+      '<button type="button" class="btn-primary tapopt" data-action="open-overlay-sheet" data-mode="add"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">'+IC_PLUS+'</svg>เพิ่มใบงานตรวจ</button>' +
+    '</div></div>';
+}
+
+/* ---------- screen: sheet (defects + signatures) ---------- */
+function renderSheetScreen(){
+  var P = findProject(state.curP), U = findUnit(P, state.curU), S = findSheet(U, state.curS);
+  if (!P || !U || !S){ state.screen='unit'; return renderUnitScreen(); }
+  var mm = modeMeta(S.mode), isHandover = S.mode!=='stock';
+
+  var list;
+  if (!S.defects.length){
+    list = '<div class="empty-state">ยังไม่มี defect — กด “บันทึก defect” เพื่อเริ่ม</div>';
+  } else {
+    list = '<div style="display:flex;flex-direction:column;gap:12px;">' + S.defects.map(function(d, idx){
+      var sev = SEV[d.sev], st = STATUS[d.status];
+      var hasPhoto = d.photoIds && d.photoIds.length>0;
+      var thumbAttr = hasPhoto ? ' data-lazy-photo="'+attr(d.photoIds[0])+'"' : '';
+      var thumbInner = hasPhoto ? '' : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.6"></circle><path d="m21 15-5-5L5 21"></path></svg>';
+      var canUp = idx>0, canDown = idx<S.defects.length-1;
+      return '<div class="card" style="overflow:hidden;display:flex;">' +
+        '<div class="thumb" style="width:80px;flex-shrink:0;"'+thumbAttr+'>'+thumbInner+'</div>' +
+        '<div style="flex:1;padding:11px 13px;min-width:0;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+            '<span style="font-size:13px;font-weight:700;">'+esc(catName(d.cat))+'</span>' +
+            '<span class="tapopt" data-action="cycle-status" data-id="'+attr(d.id)+'" style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;background:'+st.bg+';color:'+st.color+';white-space:nowrap;">'+esc(st.name)+'</span></div>' +
+          '<div style="font-size:13px;color:var(--fg-2);margin-top:5px;line-height:1.4;">'+esc(d.note)+'</div>' +
+          '<div style="display:flex;align-items:center;gap:9px;margin-top:8px;flex-wrap:wrap;">' +
+            '<span style="font-size:11px;font-weight:700;color:'+sev.color+';">● '+esc(sev.name)+'</span>' +
+            '<span style="font-size:11.5px;color:var(--fg-3);">'+esc(d.room)+'</span>' +
+            (hasPhoto && d.photoIds.length>1 ? '<span style="font-size:11px;color:var(--fg-3);">+'+(d.photoIds.length-1)+' รูป</span>' : '') +
+            '<span style="margin-left:auto;display:flex;gap:10px;">' +
+              '<span class="tapopt" data-action="move-defect" data-dir="up" data-id="'+attr(d.id)+'" style="color:'+(canUp?'var(--fg-2)':'var(--ap-neutral-400)')+';display:inline-flex;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></span>' +
+              '<span class="tapopt" data-action="move-defect" data-dir="down" data-id="'+attr(d.id)+'" style="color:'+(canDown?'var(--fg-2)':'var(--ap-neutral-400)')+';display:inline-flex;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"></path></svg></span>' +
+              '<span class="tapopt" data-action="open-overlay-defect" data-mode="edit" data-id="'+attr(d.id)+'" style="color:var(--fg-2);display:inline-flex;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">'+IC_EDIT+'</svg></span>' +
+              '<span class="tapopt" data-action="remove-defect" data-id="'+attr(d.id)+'" style="color:var(--fg-3);display:inline-flex;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"></path></svg></span>' +
+            '</span></div></div></div>';
+    }).join('') + '</div>';
+  }
+
+  function sigSlot(role, label, dataUrl, name){
+    var inner = dataUrl
+      ? '<div class="sign-slot signed" style="'+styleUrl(dataUrl)+'"></div>'
+      : '<div class="sign-slot tapopt" data-action="open-signature" data-role="'+role+'">แตะเพื่อเซ็นชื่อ</div>';
+    var actions = dataUrl
+      ? '<div style="display:flex;gap:14px;margin-top:8px;font-size:12.5px;">' +
+          '<span class="tapopt" data-action="open-signature" data-role="'+role+'" style="color:var(--ap-red-600);font-weight:600;">เซ็นใหม่</span>' +
+          '<span class="tapopt" data-action="remove-signature" data-role="'+role+'" style="color:var(--fg-3);">ลบลายเซ็น</span></div>'
+      : '';
+    return '<div class="sign-box"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;">' +
+      '<span style="font-size:13px;font-weight:700;">'+esc(label)+'</span>' +
+      (name?'<span style="font-size:12px;color:var(--fg-2);">'+esc(name)+'</span>':'') + '</div>' + inner + actions + '</div>';
+  }
+  var signHtml = '<div style="font-size:15px;font-weight:700;margin:22px 0 12px;">ลายเซ็นกำกับใบงาน</div>' +
+    '<div style="display:flex;flex-direction:column;gap:12px;">' +
+      sigSlot('se','ผู้ตรวจ (SE)', S.sigSE, S.sigSEName || S.inspector) +
+      (isHandover ? sigSlot('cust','ลูกค้า / ผู้รับมอบ', S.sigCust, S.sigCustName || U.customer) : '') +
+    '</div>';
+
+  return '<div class="screen">' +
+    '<div class="topbar">' +
+      '<div class="topbar-row">' +
+        '<span class="tapopt back-link" data-action="back-unit" style="flex:1;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'+IC_BACK+'</svg><span>'+esc(U.code)+'</span></span>' +
+        iconBtn('open-overlay-sheet',' data-mode="edit" data-id="'+attr(S.id)+'"',IC_EDIT) +
+        iconBtn('back-projects','',IC_HOME) +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:9px;margin-top:12px;">' +
+        '<h1 style="margin:0;">ครั้งที่ '+(S.round||1)+'</h1><span class="tag '+mm.tag+'">'+esc(mm.label)+'</span></div>' +
+      '<div class="sub">'+(S.date?esc(S.date):'ยังไม่ระบุวันที่')+(S.inspector?' · ผู้ตรวจ '+esc(S.inspector):'')+'</div>' +
+    '</div>' +
+    '<div class="scroll" style="padding:16px;">' +
+      '<div style="font-size:15px;font-weight:700;margin-bottom:12px;">defect ที่พบ ('+S.defects.length+')</div>' + list + signHtml +
+    '</div>' +
+    '<div class="bottom-bar">' +
+      '<button type="button" class="btn-outline-round tapopt" data-action="export-pdf" data-scope="sheet" title="ส่งออก PDF ใบงานนี้"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">'+IC_PDF+'</svg></button>' +
+      '<button type="button" class="btn-primary tapopt" data-action="open-overlay-defect" data-mode="add" style="flex:1;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">'+IC_PLUS+'</svg>บันทึก defect</button>' +
+    '</div></div>';
+}
+
+/* ---------- overlay: project ---------- */
+function renderProjectOverlay(){
+  var isEdit = state.formMode==='edit';
+  var P = isEdit ? findProject(state.editId) : null;
+  var name = P?P.name:'', details = P?(P.details||''):'', curType = P?P.type:state.formType;
+  var typeChips = TYPES.map(function(t){ return '<span class="chip tapopt'+(t===curType?' is-active':'')+'" data-group="type" data-value="'+attr(t)+'" data-action="pick-chip">'+esc(t)+'</span>'; }).join('');
+  return '<div class="overlay-backdrop tapopt" data-action="close-overlay"></div>' +
+  '<div class="overlay-sheet" id="project-overlay"><div class="sheet-grabber"></div>' +
+    '<div style="font-size:20px;font-weight:700;margin-bottom:18px;">'+(isEdit?'แก้ไขโครงการ':'เพิ่มโครงการใหม่')+'</div>' +
+    '<div class="field-label">ชื่อโครงการ</div>' +
+    '<input class="fld" id="f-p-name" value="'+attr(name)+'" placeholder="เช่น THE PALAZZO พระราม 9" style="margin-bottom:16px;">' +
+    '<div class="field-label">รายละเอียด / ที่ตั้ง (ถ้ามี)</div>' +
+    '<textarea class="fld" id="f-p-details" rows="2" placeholder="เช่น ที่ตั้ง, เฟส, หมายเหตุโครงการ" style="margin-bottom:16px;">'+esc(details)+'</textarea>' +
+    '<div class="field-label">ประเภทโครงการ</div>' +
+    '<div class="chip-row" style="margin-bottom:22px;">'+typeChips+'</div>' +
+    '<button type="button" class="btn-primary tapopt" data-action="submit-project">'+(isEdit?'บันทึกการแก้ไข':'สร้างโครงการ')+'</button></div>';
+}
+
+/* ---------- overlay: unit (แปลง) ---------- */
+function renderUnitOverlay(){
+  var P = findProject(state.curP);
+  var isEdit = state.formMode==='edit';
+  var U = isEdit ? findUnit(P, state.editId) : null;
+  return '<div class="overlay-backdrop tapopt" data-action="close-overlay"></div>' +
+  '<div class="overlay-sheet" id="unit-overlay"><div class="sheet-grabber"></div>' +
+    '<div style="font-size:20px;font-weight:700;margin-bottom:18px;">'+(isEdit?'แก้ไขแปลง':'เพิ่มแปลง / บ้าน')+'</div>' +
+    '<div class="field-label">รหัสแปลง / บ้านเลขที่</div>' +
+    '<input class="fld" id="f-u-code" value="'+attr(U?U.code:'')+'" placeholder="เช่น แปลง 00B01 · บ้านเลขที่ 9/14" style="margin-bottom:16px;">' +
+    '<div class="field-label">ชื่อลูกค้า (ถ้ามี)</div>' +
+    '<input class="fld" id="f-u-customer" value="'+attr(U?U.customer||'':'')+'" placeholder="เช่น คุณสมชาย ใจดี" style="margin-bottom:16px;">' +
+    '<div class="field-label">หมายเหตุ (ถ้ามี)</div>' +
+    '<input class="fld" id="f-u-note" value="'+attr(U?U.note||'':'')+'" placeholder="เช่น บ้านว่างเกิน 1 ปี" style="margin-bottom:22px;">' +
+    '<button type="button" class="btn-primary tapopt" data-action="submit-unit">'+(isEdit?'บันทึกการแก้ไข':'เพิ่มแปลง')+'</button></div>';
+}
+
+/* ---------- overlay: sheet (ใบงานตรวจ) ---------- */
+function renderSheetOverlay(){
+  var P = findProject(state.curP), U = findUnit(P, state.curU);
+  var isEdit = state.formMode==='edit';
+  var S = isEdit ? findSheet(U, state.editId) : null;
+  var curMode = S ? S.mode : state.formSheetMode;
+  var nextRound = 1; U.sheets.forEach(function(s){ if((s.round||0)>=nextRound) nextRound=(s.round||0)+1; });
+  var round = S ? S.round : nextRound;
+  var date = S ? (S.date||'') : todayStr();
+  var inspector = S ? (S.inspector||'') : '';
+
+  var modeDefs = [
+    { id:'handover', title:'ตรวจรับบ้านก่อนโอน', desc:'เดินตรวจพร้อมลูกค้า · มีลายเซ็นลูกค้ากำกับ' },
+    { id:'stock', title:'ปรับปรุงบ้าน Stock', desc:'สำรวจบ้านคงคลังเพื่อทำรายการซ่อม/ปรับปรุง' },
+  ];
+  var modeCards = modeDefs.map(function(m){
+    return '<div class="mode-card tapopt'+(m.id===curMode?' is-active':'')+'" data-group="mode" data-value="'+m.id+'" data-action="pick-chip">' +
+      '<span class="dot"><span></span></span><div><div class="mode-title">'+esc(m.title)+'</div><div class="mode-desc">'+esc(m.desc)+'</div></div></div>';
+  }).join('');
+  return '<div class="overlay-backdrop tapopt" data-action="close-overlay"></div>' +
+  '<div class="overlay-sheet" id="sheet-overlay"><div class="sheet-grabber"></div>' +
+    '<div style="font-size:20px;font-weight:700;margin-bottom:18px;">'+(isEdit?'แก้ไขใบงานตรวจ':'เพิ่มใบงานตรวจ')+'</div>' +
+    '<div class="field-label">ประเภทงาน</div>' +
+    '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">'+modeCards+'</div>' +
+    '<div style="display:flex;gap:12px;margin-bottom:16px;">' +
+      '<div style="width:110px;"><div class="field-label">ครั้งที่</div><input class="fld" id="f-s-round" type="number" min="1" inputmode="numeric" value="'+attr(round)+'"></div>' +
+      '<div style="flex:1;"><div class="field-label">วันที่ตรวจ</div><input class="fld" id="f-s-date" value="'+attr(date)+'" placeholder="วว/ดด/ปปปป"></div>' +
+    '</div>' +
+    '<div class="field-label">ผู้ตรวจ (SE)</div>' +
+    '<input class="fld" id="f-s-inspector" value="'+attr(inspector)+'" placeholder="เช่น decha" style="margin-bottom:22px;">' +
+    '<button type="button" class="btn-primary tapopt" data-action="submit-sheet">'+(isEdit?'บันทึกการแก้ไข':'สร้างใบงานตรวจ')+'</button></div>';
+}
+
+/* ---------- overlay: defect ---------- */
+function renderPhotoStripHtml(){
+  var camBtns = '<div style="display:flex;gap:10px;">' +
+    '<button type="button" class="tapopt" data-action="trigger-camera" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#fff;border:1px solid var(--border-default);border-radius:12px;padding:11px 10px;font-size:13px;font-weight:600;">' +
+      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3Z"></path><circle cx="12" cy="13" r="3.2"></circle></svg>ถ่ายรูป</button>' +
+    '<button type="button" class="tapopt" data-action="trigger-gallery" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:#fff;border:1px solid var(--border-default);border-radius:12px;padding:11px 10px;font-size:13px;font-weight:600;">' +
+      '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.6"></circle><path d="m21 15-5-5L5 21"></path></svg>เลือกจากคลัง</button></div>';
+  var tiles = pendingPhotos.map(function(ph, i){
+    return '<div class="photo-tile" style="'+styleUrl(ph.url)+'"><span class="photo-remove tapopt" data-action="remove-photo" data-index="'+i+'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M18 6 6 18M6 6l12 12"></path></svg></span></div>';
+  }).join('');
+  return camBtns + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">'+tiles+'</div>' +
+    (pendingPhotos.length>=MAX_PHOTOS_PER_DEFECT ? '<div style="font-size:11.5px;color:var(--fg-3);margin-top:6px;">ใส่รูปได้สูงสุด '+MAX_PHOTOS_PER_DEFECT+' รูปต่อรายการ</div>' : '');
+}
+function renderDefectOverlay(){
+  var isEdit = state.formMode==='edit';
+  var P = findProject(state.curP), U = findUnit(P, state.curU), S = findSheet(U, state.curS);
+  var D = isEdit ? findDefect(S, state.editId) : null;
+  var curCat = D?D.cat:state.formCat, curSev = D?D.sev:state.formSev, curRoom = D?D.room:state.formRoom, note = D?D.note:'';
+  var catChips = CATS.map(function(c){ return '<span class="chip tapopt'+(c.id===curCat?' is-active':'')+'" data-group="cat" data-value="'+c.id+'" data-action="pick-chip">'+esc(c.name)+'</span>'; }).join('');
+  var sevChips = ['high','mid','low'].map(function(id){ return '<span class="sev-chip tapopt'+(id===curSev?' is-active':'')+'" data-group="sev" data-value="'+id+'" data-action="pick-chip">'+esc(SEV[id].name)+'</span>'; }).join('');
+  var roomChips = ROOMS.map(function(r){ return '<span class="chip tapopt'+(r===curRoom?' is-active':'')+'" data-group="room" data-value="'+attr(r)+'" data-action="pick-chip">'+esc(r)+'</span>'; }).join('');
+  return '<div class="overlay-backdrop tapopt" data-action="close-overlay"></div>' +
+  '<div class="overlay-sheet" id="defect-overlay"><div class="sheet-grabber"></div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+      '<span style="font-size:20px;font-weight:700;">'+(isEdit?'แก้ไข defect':'บันทึก defect')+'</span>' +
+      '<span class="tapopt icon-btn" data-action="close-overlay"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"></path></svg></span></div>' +
+    '<div class="field-label">รูปถ่าย</div>' +
+    '<div id="defect-photo-strip" style="margin-bottom:18px;">'+renderPhotoStripHtml()+'</div>' +
+    '<div class="field-label">หมวดหมู่</div><div class="chip-row" style="margin-bottom:18px;">'+catChips+'</div>' +
+    '<div class="field-label">ระดับความรุนแรง</div><div style="display:flex;gap:8px;margin-bottom:18px;">'+sevChips+'</div>' +
+    '<div class="field-label">ห้อง / พื้นที่</div><div class="chip-row" style="margin-bottom:18px;">'+roomChips+'</div>' +
+    '<div class="field-label">รายละเอียด</div>' +
+    '<textarea class="fld" id="f-d-note" rows="3" placeholder="พิมพ์รายละเอียดที่พบ…" style="margin-bottom:20px;">'+esc(note)+'</textarea>' +
+    '<button type="button" class="btn-primary tapopt" data-action="submit-defect">'+(isEdit?'บันทึกการแก้ไข':'บันทึก defect')+'</button></div>';
+}
+function refreshPhotoStrip(){
+  var el = document.getElementById('defect-photo-strip');
+  if (!el) return; el.innerHTML = renderPhotoStripHtml(); hydrateLazyPhotos(el);
+}
+
+/* ---------- overlay: signature pad ---------- */
+function renderSignatureOverlay(){
+  var label = state.sigRole==='cust' ? 'ลายเซ็นลูกค้า / ผู้รับมอบ' : 'ลายเซ็นผู้ตรวจ (SE)';
+  var P = findProject(state.curP), U = findUnit(P, state.curU), S = findSheet(U, state.curS);
+  var nameVal = state.sigRole==='cust' ? (S.sigCustName||U.customer||'') : (S.sigSEName||S.inspector||'');
+  return '<div class="overlay-backdrop tapopt" data-action="close-overlay"></div>' +
+  '<div class="overlay-sheet" id="signature-overlay"><div class="sheet-grabber"></div>' +
+    '<div style="font-size:20px;font-weight:700;margin-bottom:6px;">'+esc(label)+'</div>' +
+    '<div style="font-size:13px;color:var(--fg-2);margin-bottom:14px;">เซ็นในกรอบด้านล่างด้วยนิ้วหรือปากกา</div>' +
+    '<canvas id="sig-canvas"></canvas>' +
+    '<div style="display:flex;justify-content:flex-end;margin:8px 0 16px;"><span class="tapopt" data-action="clear-signature" style="font-size:13px;font-weight:600;color:var(--ap-red-600);">ล้าง</span></div>' +
+    '<div class="field-label">ชื่อผู้เซ็น (ถ้ามี)</div>' +
+    '<input class="fld" id="f-sig-name" value="'+attr(nameVal)+'" placeholder="เช่น คุณสมชาย ใจดี" style="margin-bottom:20px;">' +
+    '<button type="button" class="btn-primary tapopt" data-action="submit-signature">บันทึกลายเซ็น</button></div>';
+}
+function initSignaturePad(){
+  var c = document.getElementById('sig-canvas'); if (!c) return;
+  var rect = c.getBoundingClientRect();
+  var dpr = window.devicePixelRatio || 1;
+  c.width = Math.round(rect.width*dpr); c.height = Math.round(rect.height*dpr);
+  var ctx = c.getContext('2d'); ctx.scale(dpr,dpr);
+  ctx.lineWidth = 2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#131317';
+  var drawing=false, last=null, dirty=false;
+  function pos(e){ var r=c.getBoundingClientRect(); var t=(e.touches&&e.touches[0])||e; return { x:t.clientX-r.left, y:t.clientY-r.top }; }
+  function down(e){ drawing=true; last=pos(e); e.preventDefault(); }
+  function move(e){ if(!drawing) return; var p=pos(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; dirty=true; e.preventDefault(); }
+  function up(){ drawing=false; }
+  if (window.PointerEvent){
+    c.addEventListener('pointerdown',down); c.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+  } else {
+    c.addEventListener('touchstart',down,{passive:false}); c.addEventListener('touchmove',move,{passive:false}); window.addEventListener('touchend',up);
+    c.addEventListener('mousedown',down); c.addEventListener('mousemove',move); window.addEventListener('mouseup',up);
+  }
+  sigPad = {
+    isDirty:function(){ return dirty; },
+    clear:function(){ ctx.clearRect(0,0,c.width,c.height); dirty=false; },
+    export:function(){
+      // trim to a max width and add white background for a clean PNG
+      var W=520, sc=W/c.width, out=document.createElement('canvas');
+      out.width=W; out.height=Math.round(c.height*sc);
+      var o=out.getContext('2d'); o.fillStyle='#fff'; o.fillRect(0,0,out.width,out.height);
+      o.drawImage(c,0,0,out.width,out.height);
+      return out.toDataURL('image/png');
+    }
+  };
+}
+
+/* ---------- navigation ---------- */
+function gotoProjects(){ Object.assign(state,{screen:'projects',curP:null,curU:null,curS:null,overlay:null}); render(); }
+function gotoProject(pid){ Object.assign(state,{screen:'project',curP:pid,curU:null,curS:null,overlay:null}); render(); }
+function gotoUnit(uidv){ Object.assign(state,{screen:'unit',curU:uidv,curS:null,overlay:null}); render(); }
+function gotoSheet(sid){ Object.assign(state,{screen:'sheet',curS:sid,overlay:null}); render(); }
+function backToProject(){ Object.assign(state,{screen:'project',curU:null,curS:null,overlay:null}); render(); }
+function backToUnit(){ Object.assign(state,{screen:'unit',curS:null,overlay:null}); render(); }
+
+function openProjectOverlay(mode,id){ state.overlay='project'; state.formMode=mode; state.editId=id||null; if(mode!=='edit') state.formType=TYPES[0]; render(); }
+function openUnitOverlay(mode,id){ state.overlay='unit'; state.formMode=mode; state.editId=id||null; render(); }
+function openSheetOverlay(mode,id){ state.overlay='sheet'; state.formMode=mode; state.editId=id||null; if(mode!=='edit') state.formSheetMode='handover'; render(); }
+function openDefectOverlay(mode,id){
+  state.overlay='defect'; state.formMode=mode; state.editId=id||null;
+  state.formCat=CATS[0].id; state.formSev='mid'; state.formRoom=ROOMS[0];
+  if (mode==='edit'){
+    var P=findProject(state.curP),U=findUnit(P,state.curU),S=findSheet(U,state.curS),D=findDefect(S,id);
+    pendingPhotos=[];
+    if (D){ Promise.all((D.photoIds||[]).map(function(pid){ return Photos.get(pid).then(function(url){ return {url:url,photoId:pid}; }); }))
+      .then(function(list){ pendingPhotos=list.filter(function(x){return x.url;}); render(); }); }
+  } else { pendingPhotos=[]; }
+  render();
+}
+function openSignature(role){ state.overlay='signature'; state.sigRole=role; sigPad=null; render(); }
+function closeOverlay(){ state.overlay=null; pendingPhotos=[]; sigPad=null; render(); }
+
+/* ---------- mutations ---------- */
+function submitProjectForm(){
+  var nameEl=document.getElementById('f-p-name'), name=nameEl.value.trim();
+  if(!name){ nameEl.focus(); nameEl.style.borderColor='var(--ap-red-600)'; return; }
+  var details=document.getElementById('f-p-details').value.trim();
+  var typeChip=document.querySelector('#project-overlay [data-group="type"].is-active');
+  var type=typeChip?typeChip.getAttribute('data-value'):TYPES[0];
+  if(state.formMode==='edit'){ var P=findProject(state.editId); if(P){ P.name=name; P.details=details; P.type=type; } persist(); state.overlay=null; render(); }
+  else { var np={id:uid(),name:name,details:details,type:type,units:[],createdAt:Date.now()}; projects.unshift(np); persist(); Object.assign(state,{overlay:null,screen:'project',curP:np.id}); render(); }
+}
+function submitUnitForm(){
+  var P=findProject(state.curP);
+  var codeEl=document.getElementById('f-u-code'), code=codeEl.value.trim();
+  if(!code){ codeEl.focus(); codeEl.style.borderColor='var(--ap-red-600)'; return; }
+  var customer=(document.getElementById('f-u-customer')||{value:''}).value.trim();
+  var note=(document.getElementById('f-u-note')||{value:''}).value.trim();
+  if(state.formMode==='edit'){ var U=findUnit(P,state.editId); if(U){ U.code=code; U.customer=customer; U.note=note; } }
+  else { P.units.push({id:uid(),code:code,customer:customer,note:note,sheets:[],createdAt:Date.now()}); }
+  persist(); state.overlay=null; render();
+}
+function submitSheetForm(){
+  var P=findProject(state.curP), U=findUnit(P,state.curU);
+  var modeCard=document.querySelector('#sheet-overlay [data-group="mode"].is-active');
+  var mode=modeCard?modeCard.getAttribute('data-value'):'handover';
+  var round=parseInt((document.getElementById('f-s-round')||{value:'1'}).value,10)||1;
+  var date=(document.getElementById('f-s-date')||{value:''}).value.trim();
+  var inspector=(document.getElementById('f-s-inspector')||{value:''}).value.trim();
+  if(state.formMode==='edit'){ var S=findSheet(U,state.editId); if(S){ S.mode=mode; S.round=round; S.date=date; S.inspector=inspector; } persist(); state.overlay=null; render(); }
+  else { var ns=newSheet(mode,round,{date:date,inspector:inspector}); U.sheets.push(ns); persist(); Object.assign(state,{overlay:null,screen:'sheet',curS:ns.id}); render(); }
+}
+function submitDefectForm(){
+  var P=findProject(state.curP),U=findUnit(P,state.curU),S=findSheet(U,state.curS);
+  var catChip=document.querySelector('#defect-overlay [data-group="cat"].is-active');
+  var sevChip=document.querySelector('#defect-overlay [data-group="sev"].is-active');
+  var roomChip=document.querySelector('#defect-overlay [data-group="room"].is-active');
+  var note=document.getElementById('f-d-note').value.trim() || '(ไม่มีรายละเอียด)';
+  var cat=catChip?catChip.getAttribute('data-value'):CATS[0].id;
+  var sev=sevChip?sevChip.getAttribute('data-value'):'mid';
+  var room=roomChip?roomChip.getAttribute('data-value'):ROOMS[0];
+  var now=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  Promise.all(pendingPhotos.map(function(ph){ return ph.photoId?Promise.resolve(ph.photoId):Photos.put(ph.url).then(function(id){ photoUrlCache.set(id,ph.url); return id; }); }))
+    .then(function(photoIds){
+      if(state.formMode==='edit'){ var D=findDefect(S,state.editId); if(D){ D.cat=cat; D.sev=sev; D.room=room; D.note=note; D.photoIds=photoIds; } }
+      else { S.defects.push({id:uid(),room:room,cat:cat,sev:sev,status:'open',note:note,photoIds:photoIds,time:now,createdAt:Date.now()}); }
+      persist(); state.overlay=null; pendingPhotos=[]; render();
+    });
+}
+function submitSignature(){
+  var P=findProject(state.curP),U=findUnit(P,state.curU),S=findSheet(U,state.curS);
+  if(!S) return;
+  var name=(document.getElementById('f-sig-name')||{value:''}).value.trim();
+  var dataUrl = (sigPad && sigPad.isDirty()) ? sigPad.export() : null;
+  if(!dataUrl && !((state.sigRole==='cust'?S.sigCust:S.sigSE))){ alert('กรุณาเซ็นชื่อก่อนบันทึก'); return; }
+  if(state.sigRole==='cust'){ if(dataUrl) S.sigCust=dataUrl; S.sigCustName=name; }
+  else { if(dataUrl) S.sigSE=dataUrl; S.sigSEName=name; }
+  persist(); state.overlay=null; sigPad=null; render();
+}
+function removeSignature(role){
+  var P=findProject(state.curP),U=findUnit(P,state.curU),S=findSheet(U,state.curS); if(!S) return;
+  if(role==='cust'){ S.sigCust=null; S.sigCustName=''; } else { S.sigSE=null; S.sigSEName=''; }
+  persist(); render();
+}
+function cycleDefectStatus(did){
+  var P=findProject(state.curP),U=findUnit(P,state.curU),S=findSheet(U,state.curS),D=findDefect(S,did);
+  if(!D) return; D.status=STATUS_ORDER[(STATUS_ORDER.indexOf(D.status)+1)%STATUS_ORDER.length]; persist(); render();
+}
+function removeDefect(did){
+  var P=findProject(state.curP),U=findUnit(P,state.curU),S=findSheet(U,state.curS); if(!S) return;
+  var D=findDefect(S,did); if(D&&D.photoIds) D.photoIds.forEach(function(id){ Photos.del(id); });
+  S.defects=S.defects.filter(function(d){ return d.id!==did; }); persist(); render();
+}
+function moveDefect(did,dir){
+  var P=findProject(state.curP),U=findUnit(P,state.curU),S=findSheet(U,state.curS); if(!S) return;
+  var i=S.defects.findIndex(function(d){return d.id===did;}), j=dir==='up'?i-1:i+1;
+  if(i<0||j<0||j>=S.defects.length) return; var t=S.defects[i]; S.defects[i]=S.defects[j]; S.defects[j]=t; persist(); render();
+}
+function addFilesAsPhotos(fileList){
+  var files=Array.prototype.slice.call(fileList||[]); if(!files.length) return;
+  files=files.slice(0,Math.max(0,MAX_PHOTOS_PER_DEFECT-pendingPhotos.length));
+  Promise.all(files.map(downscalePhoto)).then(function(urls){ urls.forEach(function(u){ if(u) pendingPhotos.push({url:u,photoId:null}); }); refreshPhotoStrip(); });
+}
+
+/* ---------- PDF / report ---------- */
+function buildReportHtml(P, U, sheets, urlMap, sigMap){
+  var today = todayStr();
+  function thumbs(ids){
+    if(!ids||!ids.length) return '<span style="color:#C9C6BC;">—</span>';
+    return '<div style="display:flex;gap:3px;flex-wrap:wrap;">'+ids.slice(0,4).map(function(id){ var u=urlMap.get(id); return u?'<img src="'+u+'" style="width:58px;height:44px;object-fit:cover;border-radius:4px;border:1px solid #EAE8E2;">':''; }).join('')+(ids.length>4?'<span style="font-size:9px;color:#4A4A52;align-self:center;">+'+(ids.length-4)+'</span>':'')+'</div>';
+  }
+  var sections = sheets.map(function(S){
+    var mm=modeMeta(S.mode), ds=S.defects||[];
+    var counts={ all:ds.length, open:ds.filter(function(d){return d.status==='open';}).length, prog:ds.filter(function(d){return d.status==='prog';}).length, done:ds.filter(function(d){return d.status==='done';}).length };
+    var STCOL={open:'#921C1E',prog:'#9B6612',done:'#2F7A4F'};
+    var rows = ds.map(function(d,i){
+      var sev=SEV[d.sev];
+      return '<tr><td class="c">'+(i+1)+'</td>' +
+        '<td><div class="rm">'+esc(d.room)+' · '+esc(catName(d.cat))+'</div><div class="dt">'+esc(d.note)+'</div><div class="sv" style="color:'+sev.color+'">● '+esc(sev.name)+'</div></td>' +
+        '<td class="c"><span class="st" style="color:'+STCOL[d.status]+';border-color:'+STCOL[d.status]+'">'+esc(STATUS[d.status].name)+'</span></td>' +
+        '<td>'+thumbs(d.photoIds)+'</td></tr>';
+    }).join('') || '<tr><td colspan="4" style="text-align:center;color:#9C9CA4;padding:16px;">ไม่มี defect</td></tr>';
+
+    var meta = '<div class="meta-grid">' +
+      '<div><span>โครงการ</span><b>'+esc(P.name)+'</b></div>' +
+      '<div><span>ประเภทงาน</span><b>'+esc(mm.work)+'</b></div>' +
+      '<div><span>วันที่ตรวจสอบ</span><b>'+esc(S.date||'—')+' (ครั้งที่ '+(S.round||1)+')</b></div>' +
+      '<div><span>แปลง / บ้านเลขที่</span><b>'+esc(U.code)+'</b></div>' +
+      '<div><span>ลูกค้า</span><b>'+esc(U.customer||'—')+'</b></div>' +
+      '<div><span>เจ้าหน้าที่ (SE)</span><b>'+esc(S.inspector||'—')+'</b></div>' +
+    '</div>';
+
+    var sigSE = sigMap.get(S.id+':se');
+    var sigCust = sigMap.get(S.id+':cust');
+    function sbox(url,name,role){
+      var img = url ? '<img src="'+url+'" style="max-height:56px;">' : '';
+      var line = url ? '' : '<div class="sline"></div>';
+      return '<div class="sbox">'+img+line+'<div class="srole">'+esc(role)+(name?' · '+esc(name):'')+'</div></div>';
+    }
+    var signs = '<div class="signs">' + sbox(sigSE, S.sigSEName||S.inspector, 'ผู้ตรวจ (SE)') +
+      (S.mode!=='stock' ? sbox(sigCust, S.sigCustName||U.customer, 'ลูกค้า / ผู้รับมอบ') : '') + '</div>';
+
+    return '<section class="sheet">' +
+      '<div class="shead"><div><h2>รายการงานที่ต้องแก้ไข (Defect List)</h2><div class="badge">ครั้งที่ '+(S.round||1)+' · '+esc(mm.label)+'</div></div>' +
+        '<div class="brand">AP<small>QC INSPECT REPORT</small></div></div>' +
+      meta +
+      '<div class="summary"><div class="sc"><b>'+counts.all+'</b><span>ทั้งหมด</span></div><div class="sc"><b style="color:#921C1E">'+counts.open+'</b><span>รอแก้</span></div><div class="sc"><b style="color:#9B6612">'+counts.prog+'</b><span>กำลังแก้</span></div><div class="sc"><b style="color:#2F7A4F">'+counts.done+'</b><span>แก้แล้ว</span></div></div>' +
+      '<table><thead><tr><th class="c" style="width:34px;">ลำดับ</th><th>รายการแจ้งซ่อม</th><th class="c" style="width:64px;">สถานะ</th><th style="width:210px;">รูปถ่าย</th></tr></thead><tbody>'+rows+'</tbody></table>' +
+      signs +
+    '</section>';
+  }).join('');
+
+  var css='@page{size:A4;margin:14mm 12mm;}*{box-sizing:border-box;}' +
+    'body{font-family:"AP","Sarabun","Noto Sans Thai",-apple-system,sans-serif;color:#131317;margin:0;font-size:12px;}' +
+    '.sheet{page-break-after:always;}.sheet:last-child{page-break-after:auto;}' +
+    '.shead{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #921C1E;padding-bottom:11px;margin-bottom:14px;}' +
+    '.shead h2{font-size:16px;margin:0 0 5px;}.badge{display:inline-block;font-size:11px;font-weight:700;color:#921C1E;background:#FAEBEB;padding:3px 10px;border-radius:999px;}' +
+    '.brand{font-size:24px;font-weight:800;color:#921C1E;letter-spacing:-.5px;text-align:right;}.brand small{display:block;font-size:8.5px;font-weight:700;letter-spacing:1.5px;color:#131317;margin-top:2px;}' +
+    '.meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px 16px;margin-bottom:14px;}.meta-grid span{display:block;font-size:10px;color:#70707A;}.meta-grid b{font-size:12px;font-weight:600;}' +
+    '.summary{display:flex;gap:8px;margin-bottom:14px;}.sc{flex:1;border:1px solid #E2DFD6;border-radius:8px;padding:7px 11px;}.sc b{display:block;font-size:19px;}.sc span{font-size:10px;color:#70707A;}' +
+    'table{width:100%;border-collapse:collapse;font-size:11px;}th{text-align:left;background:#921C1E;color:#fff;padding:6px 8px;font-weight:600;}td{padding:7px 8px;border-bottom:1px solid #EAE8E2;vertical-align:top;}td.c,th.c{text-align:center;}' +
+    '.rm{font-weight:700;margin-bottom:2px;}.dt{color:#4A4A52;line-height:1.4;}.sv{font-size:10px;font-weight:700;margin-top:3px;}' +
+    '.st{font-weight:700;border:1px solid;border-radius:999px;padding:2px 7px;font-size:10px;white-space:nowrap;}' +
+    '.signs{display:flex;gap:48px;margin-top:34px;page-break-inside:avoid;}.sbox{flex:1;text-align:center;}.sbox img{margin:0 auto 4px;}.sline{border-bottom:1px solid #131317;height:44px;margin-bottom:6px;}.srole{font-size:11px;color:#4A4A52;border-top:1px solid #131317;padding-top:5px;}' +
+    '@media screen{body{background:#EAE8E2;}.wrap{max-width:820px;margin:22px auto;}.sheet{background:#fff;padding:32px 36px;margin-bottom:20px;box-shadow:0 8px 26px rgba(0,0,0,.14);}.ph{position:fixed;top:14px;right:14px;background:#921C1E;color:#fff;padding:11px 17px;border-radius:999px;font:600 13px sans-serif;cursor:pointer;border:0;z-index:9;}}' +
+    '@media print{.ph{display:none;}}';
+
+  var scriptTag='<scr'+'ipt>window.addEventListener("load",function(){setTimeout(function(){window.print();},500);});</scr'+'ipt>';
+  return '<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><title>รายงานตรวจบ้าน · '+esc(P.name)+' · '+esc(U.code)+'</title><style>'+css+'</style></head><body><div class="wrap">'+sections+'</div><button class="ph" onclick="window.print()">พิมพ์ / บันทึก PDF</button>'+scriptTag+'</body></html>';
+}
+function exportPDF(scope){
+  var P=findProject(state.curP), U=findUnit(P,state.curU);
+  if(!P||!U) return;
+  var sheets = scope==='sheet' ? [findSheet(U,state.curS)].filter(Boolean) : (U.sheets||[]).slice().sort(function(a,b){return (a.round||0)-(b.round||0);});
+  if(!sheets.length) return;
+  var w = window.open('','_blank');
+  var idSet = new Set();
+  sheets.forEach(function(s){ (s.defects||[]).forEach(function(d){ (d.photoIds||[]).forEach(function(id){ idSet.add(id); }); }); });
+  var sigMap = new Map();
+  sheets.forEach(function(s){ if(s.sigSE) sigMap.set(s.id+':se', s.sigSE); if(s.sigCust) sigMap.set(s.id+':cust', s.sigCust); });
+  Promise.all(Array.from(idSet).map(function(id){ return Photos.get(id).then(function(url){ return [id,url]; }); }))
+    .then(function(entries){
+      var urlMap = new Map(entries.filter(function(e){ return e[1]; }));
+      var html = buildReportHtml(P, U, sheets, urlMap, sigMap);
+      if(w){ w.document.open(); w.document.write(html); w.document.close(); }
+    })
+    .catch(function(){ if(w) w.close(); });
+}
+
+/* ---------- event delegation ---------- */
+document.getElementById('app').addEventListener('click', function(e){
+  var el=e.target.closest('[data-action]'); if(!el) return;
+  var a=el.getAttribute('data-action');
+  switch(a){
+    case 'open-project': gotoProject(el.getAttribute('data-id')); break;
+    case 'open-unit': gotoUnit(el.getAttribute('data-id')); break;
+    case 'open-sheet': gotoSheet(el.getAttribute('data-id')); break;
+    case 'back-projects': gotoProjects(); break;
+    case 'back-project': backToProject(); break;
+    case 'back-unit': backToUnit(); break;
+    case 'open-overlay-project': openProjectOverlay(el.getAttribute('data-mode'), el.getAttribute('data-id')); break;
+    case 'open-overlay-unit': openUnitOverlay(el.getAttribute('data-mode'), el.getAttribute('data-id')); break;
+    case 'open-overlay-sheet': openSheetOverlay(el.getAttribute('data-mode'), el.getAttribute('data-id')); break;
+    case 'open-overlay-defect': openDefectOverlay(el.getAttribute('data-mode'), el.getAttribute('data-id')); break;
+    case 'open-signature': openSignature(el.getAttribute('data-role')); break;
+    case 'clear-signature': if(sigPad) sigPad.clear(); break;
+    case 'remove-signature': removeSignature(el.getAttribute('data-role')); break;
+    case 'close-overlay': closeOverlay(); break;
+    case 'pick-chip': { var g=el.getAttribute('data-group'), parent=el.parentElement; parent.querySelectorAll('[data-group="'+g+'"]').forEach(function(s){ s.classList.remove('is-active'); }); el.classList.add('is-active'); break; }
+    case 'submit-project': submitProjectForm(); break;
+    case 'submit-unit': submitUnitForm(); break;
+    case 'submit-sheet': submitSheetForm(); break;
+    case 'submit-defect': submitDefectForm(); break;
+    case 'submit-signature': submitSignature(); break;
+    case 'cycle-status': cycleDefectStatus(el.getAttribute('data-id')); break;
+    case 'remove-defect': if(window.confirm('ลบ defect นี้ใช่หรือไม่?')) removeDefect(el.getAttribute('data-id')); break;
+    case 'move-defect': moveDefect(el.getAttribute('data-id'), el.getAttribute('data-dir')); break;
+    case 'export-pdf': exportPDF(el.getAttribute('data-scope')); break;
+    case 'trigger-camera': document.getElementById('cam-input').click(); break;
+    case 'trigger-gallery': document.getElementById('gal-input').click(); break;
+    case 'remove-photo': { pendingPhotos.splice(parseInt(el.getAttribute('data-index'),10),1); refreshPhotoStrip(); break; }
+    default: break;
+  }
+});
+document.getElementById('cam-input').addEventListener('change', function(e){ addFilesAsPhotos(e.target.files); e.target.value=''; });
+document.getElementById('gal-input').addEventListener('change', function(e){ addFilesAsPhotos(e.target.files); e.target.value=''; });
+
+/* ---------- PWA registration ---------- */
+function registerPWA(){
+  try { if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost')) navigator.serviceWorker.register('sw.js').catch(function(){}); } catch(e){}
+}
+
+/* ---------- boot ---------- */
+migrate().then(function(loaded){ projects = loaded || []; render(); registerPWA(); });
+</script>
 </body>
 </html>
